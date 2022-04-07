@@ -1,0 +1,6 @@
+---
+- name: Make sure HS repo file is installed
+  dnf:
+    name: centos-release-hyperscale
+    state: present
+  tags: hyperscale

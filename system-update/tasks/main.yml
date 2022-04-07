@@ -1,0 +1,51 @@
+---
+# Another approach: maybe we can get "reboot only if kernel changed" work by
+# running first upgrade all with --exclude=kernel* and then a second time with
+# only kernel packages and register a reboot_hint here.
+#
+# Another issue with this approach is: there are more packages other than the
+# kernel that would require a reboot when updated. Example: systemd.
+
+- name: Clean dnf cache
+  command: dnf clean all
+  args:
+    warn: no
+  tags:
+    - update
+
+- name: Upgrade all packages
+  dnf:
+    name: "*"
+    state: latest
+  tags:
+    - update
+
+- name: Check whether new kernel was installed
+  shell: >
+    LATEST_KERNEL=$(rpm -q --last kernel | sed -r 's/^kernel-(\S+).*/\1/' | head -1);
+    CURRENT_KERNEL=$(uname -r);
+    if [ $LATEST_KERNEL != $CURRENT_KERNEL ]; then echo 'reboot required'; fi
+  register: reboot_hint
+  tags:
+    - update
+
+- name: Reboot machine
+  shell: sleep 2 && shutdown -r now "Reboot into new kernel"
+  async: 1
+  poll: 0
+  when: reboot_hint.stdout.find("reboot required") != -1
+  ignore_errors: true
+  become: true
+  register: rebooting
+  tags:
+    - update
+
+- name: Wait for host to come back
+  local_action:
+    module: wait_for
+      host={{ ansible_host }}
+      delay=5
+  become: false
+  when: rebooting.changed
+  tags:
+    - update

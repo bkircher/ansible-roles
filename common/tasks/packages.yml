@@ -1,0 +1,17 @@
+---
+- name: Be sure required packages are installed
+  dnf:
+    name:
+      - bash-completion
+      - glibc-langpack-de
+      - mlocate
+      - qemu-guest-agent
+      - tree
+      - vim-enhanced
+    state: present
+  tags: packages
+
+- name: Be sure locate database is present
+  command: updatedb
+  args:
+    creates: /var/lib/mlocate/mlocate.db

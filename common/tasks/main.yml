@@ -1,0 +1,6 @@
+---
+# Install various software packages
+- include_tasks: packages.yml
+
+# Collect some additional facts
+- include_tasks: facts.yml

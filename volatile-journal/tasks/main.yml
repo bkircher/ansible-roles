@@ -1,0 +1,24 @@
+---
+- name: Make sure journald configuration directory exists
+  file:
+    path: /etc/systemd/journald.conf.d
+    owner: root
+    group: root
+    mode: "0755"
+    state: directory
+
+- name: Make sure journal is volatile
+  copy:
+    src: 00-volatile.conf
+    dest: /etc/systemd/journald.conf.d/00-volatile.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - restart journald service
+
+- name: Make sure rsyslog is not running
+  systemd:
+    name: rsyslog.service
+    masked: true
+    state: stopped

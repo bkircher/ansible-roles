@@ -1,0 +1,24 @@
+---
+- name: Set remote os-release file name
+  set_fact:
+    remote_os_release: "{{ inventory_dir ~
+                        '/' ~
+                        inventory_hostname ~
+                        '-os-release' }}"
+
+- name: Fetch /etc/os-release file from remote
+  fetch:
+    flat: true
+    src: /etc/os-release
+    dest: "{{ remote_os_release }}"
+
+- name: Read /etc/os-release file contents
+  set_fact:
+    os_release: "{{ os_release|default({})|
+                    combine({item|lower:
+                             lookup('ini',
+                                    item ~
+                                    ' type=properties file=' ~
+                                    remote_os_release) |
+                                    replace('\"', '')}) }}"
+  loop: [NAME, VERSION, ID, PLATFORM_ID, PRETTY_NAME]
